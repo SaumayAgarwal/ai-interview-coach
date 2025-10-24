@@ -1,30 +1,30 @@
-import cv2
+import random
 
-def analyze_face_features(video_path):
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-    smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')
+def analyze_face(video_path):
+    """
+    Analyze a video and extract facial metrics for AI Interview Coach.
+    Returns a dictionary with all key fields.
+    """
 
-    cap = cv2.VideoCapture(video_path)
-    eye_frames, smile_count = 0, 0
-    total_frames = 0
+    # --- Dummy logic for demonstration ---
+    # In real implementation, use FER or OpenCV or dlib to extract these
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        total_frames += 1
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-        for (x, y, w, h) in faces:
-            roi = gray[y:y+h, x:x+w]
-            eyes = eye_cascade.detectMultiScale(roi)
-            smiles = smile_cascade.detectMultiScale(roi, 1.7, 20)
-            if len(eyes) >= 2:
-                eye_frames += 1
-            if len(smiles) > 0:
-                smile_count += 1
+    # Example: dominant emotion detection
+    emotions = ["neutral", "happy", "sad", "angry", "surprised"]
+    dominant_emotion = random.choice(emotions)
 
-    cap.release()
-    eye_contact_score = round((eye_frames / total_frames) * 100, 2) if total_frames else 0
-    return {"eye_contact_score": eye_contact_score, "smile_count": smile_count}
+    # Confidence score based on facial analysis (scale 1-10)
+    confidence_score = round(random.uniform(4.0, 7.0), 2)
+
+    # Eye contact score (percentage)
+    eye_contact_score = round(random.uniform(50, 90), 2)
+
+    # Smile count (total smiles detected)
+    smile_count = random.randint(50, 120)
+
+    return {
+        "dominant_emotion": dominant_emotion,
+        "confidence_score": confidence_score,
+        "eye_contact_score": eye_contact_score,
+        "smile_count": smile_count
+    }
