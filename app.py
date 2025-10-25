@@ -13,7 +13,14 @@ import os, base64
 # load_dotenv()
 
 app = Flask(__name__)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Get the API key
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise ValueError("OPENAI_API_KEY not set! Add it to your .env file.")
+
+# Initialize OpenAI client
+client = OpenAI(api_key=api_key)
+
 
 UPLOAD_FOLDER = "temp"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
