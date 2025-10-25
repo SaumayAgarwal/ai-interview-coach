@@ -38,3 +38,7 @@ venv/
 *.log
 outputs/
 
+.env
+
+
+".env" 
