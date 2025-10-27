@@ -1,10 +1,9 @@
 from flask import Flask, request, jsonify
-from analysis.emotion_detector import analyze_video        # returns [(time, emotion)]
-from analysis.face_features import analyze_face            # returns confidence_score, eye_contact_score, smile_count, dominant_emotion
+from analysis.emotion_detector import analyze_video
+from analysis.face_features import analyze_face
 from analysis.confidence_metric import compute_overall_confidence
 from analysis.emotion_timeline import plot_emotion_timeline
-from analysis.ai_confidence import analyze_confidence_with_ai
-from openai import OpenAI
+from analysis.ai_confidence import analyze_combined_ai_feedback  # ✅ correct import
 from dotenv import load_dotenv
 import os, base64
 
@@ -13,13 +12,9 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Get OpenAI API key
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     raise ValueError("OPENAI_API_KEY not set! Add it to your .env file.")
-
-# Initialize OpenAI client
-client = OpenAI(api_key=api_key)
 
 UPLOAD_FOLDER = "temp"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -43,86 +38,74 @@ def analyze_video_route():
     file.save(video_path)
 
     try:
-        # 1️⃣ Analyze emotions frame-by-frame
+        # 1️⃣ Analyze emotions (frame-based)
         timeline = analyze_video(video_path)
 
         # 2️⃣ Generate emotion timeline image
         timeline_img_path = os.path.join(UPLOAD_FOLDER, "emotion_timeline.png")
         plot_emotion_timeline(timeline, timeline_img_path)
 
-        # 3️⃣ Convert timeline image to Base64
+        # 3️⃣ Convert timeline image to base64
         with open(timeline_img_path, "rb") as f:
             encoded_timeline = base64.b64encode(f.read()).decode("utf-8")
 
-        # 4️⃣ Analyze face features
+        # 4️⃣ Analyze face features (eye contact, emotion, smile count)
         face_features = analyze_face(video_path)
 
         # 5️⃣ Compute rule-based confidence metrics
         confidence_metrics = compute_overall_confidence(face_features)
 
-        # 6️⃣ AI-based visual confidence
-        ai_confidence_result = analyze_confidence_with_ai(video_path)
-        ai_conf = ai_confidence_result.get("ai_confidence_score", 0) or 0
+        # 6️⃣ Prepare metrics for combined AI feedback
+        metrics_for_ai = {
+            "rule_confidence": confidence_metrics.pop("final_confidence", 0),
+            "eye_contact_score": face_features.get("eye_contact_score"),
+            "dominant_emotion": face_features.get("dominant_emotion"),
+            "smile_engagement_score": confidence_metrics.get("smile_engagement_score"),
+            "smile_count": face_features.get("smile_count"),
+        }
 
-        # Rename final_confidence to rule_based_confidence
-        rule_conf = confidence_metrics.pop("final_confidence", 0)
+        # 7️⃣ AI-based combined confidence + feedback (single GPT call)
+        ai_result = analyze_combined_ai_feedback(video_path, metrics_for_ai)
+        ai_conf = ai_result.get("ai_confidence_score", 0)
+        ai_feedback = ai_result.get("ai_confidence_feedback", "AI feedback unavailable.")
+        ai_overall_feedback = ai_result.get("ai_overall_feedback", {})
+
+        # 8️⃣ Blend AI and rule-based confidence
+        ai_conf = ai_result.get("ai_confidence_score") or 0
+        rule_conf = confidence_metrics.get("final_confidence") or 0
 
         # Blend AI and rule-based confidence
         final_confidence = round((0.6 * ai_conf + 0.4 * rule_conf), 2)
 
-        # 7️⃣ Generate AI feedback using OpenAI
-        def generate_ai_feedback(confidence, eye_contact, emotion, smile):
-            prompt = f"""
-            You are an AI interview coach evaluating a candidate’s recorded mock interview.
-            Use the following analysis data:
-            - Confidence score: {confidence}
-            - Eye contact score: {eye_contact}
-            - Dominant emotion: {emotion}
-            - Smile engagement score: {smile}
-
-            Give short, personalized feedback (3–4 sentences).
-            Be constructive and encouraging, like a professional human coach.
-            """
-            try:
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "You are an expert AI interview coach."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=150,
-                    temperature=0.7
-                )
-                return response.choices[0].message.content.strip()
-            except Exception as e:
-                print("OpenAI API Error:", e)
-                return "AI feedback unavailable. Try again later."
-
-        ai_feedback = generate_ai_feedback(
-            final_confidence,
-            face_features["eye_contact_score"],
-            face_features["dominant_emotion"],
-            confidence_metrics["smile_engagement_score"]
-        )
-
-        # 8️⃣ Build ordered and clean JSON result
+        # 9️⃣ Build final structured response
         result = {
-            "dominant_emotion": face_features.get("dominant_emotion"),
-            "emotion_timeline_image": encoded_timeline,
-            "eye_contact_score": face_features.get("eye_contact_score"),
-            "smile_count": face_features.get("smile_count"),
-            "smile_engagement_score": confidence_metrics.get("smile_engagement_score"),
-            "smile_feedback": confidence_metrics.get("smile_feedback"),
-            "rule_based_confidence": rule_conf,
-            "ai_confidence_score": ai_conf,
-            "ai_confidence_feedback": ai_confidence_result.get("ai_confidence_feedback"),
-            "final_confidence": final_confidence,
-            "ai_feedback": ai_feedback
-        }
+                    # Emotion and eye contact
+                    "dominant_emotion": face_features.get("dominant_emotion"),
+                    "emotion_timeline_image": encoded_timeline,
+                    "eye_contact_score": round(face_features.get("eye_contact_score", 0), 2),
+
+                    # Smile analysis
+                    "smile_engagement_score": round(confidence_metrics.get("smile_engagement_score", 0), 2),
+                    "smile_feedback": confidence_metrics.get("smile_feedback"),
+
+                    # Confidence
+                    "ai_confidence_score": round(ai_conf, 2),
+                    "rule_based_confidence": round(metrics_for_ai.get("rule_confidence", 0), 2),
+                    "final_confidence": round(final_confidence, 2),
+
+                    # AI feedback
+                    "ai_overall_feedback": (
+                        ai_feedback.get("ai_overall_feedback", {})
+                        if isinstance(ai_feedback, dict)
+                        else {"summary": ai_feedback}
+                    )
+                }
+
 
         return jsonify(result)
 
     except Exception as e:
+        print("Error:", e)
         return jsonify({"error": str(e)}), 500
 
 

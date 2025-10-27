@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use("Agg")  # ✅ Use a non-GUI backend — prevents Tkinter thread errors
 import matplotlib.pyplot as plt
 
 # Assign each emotion a numeric value for plotting
