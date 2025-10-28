@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-background text-textDark font-sans;
+}
+
+h1, h2, h3 {
+  @apply font-serif text-primary;
+}
+
+
