@@ -9,9 +9,10 @@ import Interview from "./components/pages/Interview";
 import Feedback from "./components/pages/Feedback";
 import Login from "./components/pages/Login";
 import Signup from "./components/pages/Signup";
-import Dashboard from "./components/pages/Dashboard"; // optional
+import Dashboard from "./components/pages/Dashboard";
+import VideoUpload from "./components/pages/VideoUpload"; // ✅ New page
 
-// Protected route
+// Protected Route
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -30,8 +31,9 @@ function App() {
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/upload" element={<VideoUpload />} /> {/* ✅ Added route */}
 
-            {/* Protected Routes (Only if logged in) */}
+            {/* Protected Routes */}
             <Route
               path="/dashboard"
               element={
@@ -41,7 +43,7 @@ function App() {
               }
             />
 
-            {/* 404 Fallback */}
+            {/* 404 Page */}
             <Route
               path="*"
               element={
@@ -66,5 +68,3 @@ function App() {
 }
 
 export default App;
-
-
