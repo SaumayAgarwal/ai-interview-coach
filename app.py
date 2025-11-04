@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from analysis.emotion_detector import analyze_video
 from analysis.face_features import analyze_face
 from analysis.confidence_metric import compute_overall_confidence
@@ -11,6 +12,8 @@ import os, base64
 load_dotenv()
 
 app = Flask(__name__)
+# Enable CORS for all routes
+CORS(app, origins=["http://localhost:3000", "http://localhost:8000"])
 
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
