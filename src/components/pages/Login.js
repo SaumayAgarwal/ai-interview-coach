@@ -1,89 +1,79 @@
+// src/components/pages/Login.js
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Lock, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import PageWrapper from "../PageWrapper";
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleLogin = (e) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      if (email && password) {
-        navigate("/interview");
-      } else {
-        setError("Invalid credentials!");
-      }
-      setLoading(false);
-    }, 1000);
+    // Add your normal login logic here (API call)
+    localStorage.setItem("isLoggedIn", "true"); // simple auth simulation
+    navigate("/home");
+  };
+
+  const handleGuestLogin = () => {
+    // Log in as guest
+    localStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem("guestUser", "true"); // optional, to know it's a guest
+    navigate("/home");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600">
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl p-10 w-[90%] sm:w-[400px] text-white"
-      >
-        <h1 className="text-3xl font-bold text-center mb-8">Welcome Back 👋</h1>
+    <PageWrapper>
+      <div className="flex justify-center items-center min-h-screen bg-gray-100 px-6">
+        <div className="bg-white rounded-2xl shadow-2xl p-10 max-w-md w-full text-center">
+          <h2 className="text-3xl font-bold mb-6 text-black">Login</h2>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-5">
-          <div className="flex items-center bg-white/10 rounded-xl px-4 py-2 border border-white/20 focus-within:ring-2 focus-within:ring-blue-400">
-            <Mail className="text-blue-300 mr-3" />
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <input
               type="email"
               placeholder="Email"
-              className="bg-transparent outline-none w-full text-white placeholder-gray-300"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               required
             />
-          </div>
-
-          <div className="flex items-center bg-white/10 rounded-xl px-4 py-2 border border-white/20 focus-within:ring-2 focus-within:ring-blue-400">
-            <Lock className="text-blue-300 mr-3" />
             <input
               type="password"
               placeholder="Password"
-              className="bg-transparent outline-none w-full text-white placeholder-gray-300"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               required
             />
-          </div>
+            <button
+              type="submit"
+              className="bg-black hover:bg-gray-900 text-white font-semibold py-3 rounded-full transition-all duration-300"
+            >
+              Login
+            </button>
+          </form>
 
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.97 }}
-            type="submit"
-            className="mt-3 bg-blue-600 hover:bg-blue-700 transition text-white font-semibold rounded-xl py-2 w-full"
+          {/* Login as Guest */}
+          <button
+            onClick={handleGuestLogin}
+            className="mt-4 bg-gray-200 hover:bg-gray-300 text-black font-semibold py-3 rounded-full w-full transition-all duration-300"
           >
-            {loading ? "Logging in..." : "Log In"}
-          </motion.button>
-        </form>
+            Login as Guest
+          </button>
 
-        <p className="text-center text-sm text-gray-300 mt-6">
-          Don’t have an account?{" "}
-          <span
-            onClick={() => navigate("/signup")}
-            className="text-blue-300 hover:text-blue-200 cursor-pointer font-medium"
-          >
-            Sign up
-          </span>
-        </p>
-      </motion.div>
-    </div>
+          <p className="mt-4 text-gray-600">
+            Don't have an account?{" "}
+            <span
+              className="text-indigo-600 cursor-pointer hover:underline"
+              onClick={() => navigate("/signup")}
+            >
+              Sign Up
+            </span>
+          </p>
+        </div>
+      </div>
+    </PageWrapper>
   );
 };
 
 export default Login;
-
-

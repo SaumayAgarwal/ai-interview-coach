@@ -1,54 +1,70 @@
+// src/Footer.js
 import React from "react";
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Github, Linkedin, Twitter } from "lucide-react";
+import { FaTwitter, FaLinkedin, FaGithub } from "react-icons/fa";
 
 const Footer = () => {
   return (
-    <footer className="bg-primary text-gray-200 py-10 px-6 mt-20">
-      <motion.div
-        className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8"
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div>
-          <h2 className="text-2xl font-serif text-white mb-3">AI Interview Coach</h2>
-          <p className="text-gray-300">
-            Helping candidates refine their skills with AI-driven feedback and insights.
+    <footer className="bg-gradient-to-r from-gray-900 via-black to-gray-900 text-white py-12 px-6 relative overflow-hidden">
+      
+      {/* Decorative floating gradient circle */}
+      <div className="absolute -top-20 -left-20 w-72 h-72 bg-indigo-600 rounded-full opacity-20 blur-3xl animate-pulse-slow -z-10"></div>
+
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-10">
+
+        {/* Logo & Name */}
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-3">
+          <motion.div
+            className="text-3xl font-extrabold text-white"
+            style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+            initial={{ y: -10 }}
+            animate={{ y: 0 }}
+            transition={{ duration: 2, repeat: Infinity, repeatType: "mirror" }}
+          >
+            AI Interview Coach
+          </motion.div>
+          <p className="text-gray-400 mt-2 md:mt-0">
+            Your AI-powered interview companion
           </p>
         </div>
 
-        <div>
-          <h3 className="text-xl font-semibold mb-3">Contact</h3>
-          <ul className="space-y-2">
-            <li className="flex items-center gap-2">
-              <Mail className="w-5 h-5 text-secondary" /> support@aiinterviewcoach.com
-            </li>
-            <li className="flex items-center gap-2">
-              <Phone className="w-5 h-5 text-secondary" /> +91 98765 43210
-            </li>
-            <li className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-secondary" /> Mumbai, India
-            </li>
-          </ul>
+        {/* Contact Info */}
+        <div className="text-gray-400 flex flex-col gap-2">
+          <p>Email: support@aiinterviewcoach.com</p>
+          <p>Phone: +91 98765 43210</p>
+          <p>© 2025 AI Interview Coach. All rights reserved.</p>
         </div>
 
-        <div>
-          <h3 className="text-xl font-semibold mb-3">Follow Us</h3>
-          <div className="flex space-x-5 mt-3">
-            <a href="#" className="hover:text-secondary transition"><Github className="w-6 h-6" /></a>
-            <a href="#" className="hover:text-secondary transition"><Linkedin className="w-6 h-6" /></a>
-            <a href="#" className="hover:text-secondary transition"><Twitter className="w-6 h-6" /></a>
-          </div>
+        {/* Social Links */}
+        <div className="flex gap-6 text-white text-2xl">
+          {[
+            { icon: FaTwitter, link: "https://twitter.com/" },
+            { icon: FaLinkedin, link: "https://linkedin.com/" },
+            { icon: FaGithub, link: "https://github.com/" }
+          ].map((s, idx) => {
+            const Icon = s.icon;
+            return (
+              <a
+                key={idx}
+                href={s.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-indigo-500 transition-transform transform hover:scale-125 duration-300"
+              >
+                <Icon />
+              </a>
+            );
+          })}
         </div>
-      </motion.div>
-      <div className="text-center mt-10 text-sm text-gray-400">
-        © {new Date().getFullYear()} AI Interview Coach. All rights reserved.
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-gray-700 mt-10 pt-6 text-center text-gray-500 text-sm">
+        Designed & Built with ❤️ by Your Team
       </div>
     </footer>
   );
 };
 
 export default Footer;
-
-
 
