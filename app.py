@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
+from flask import render_template  
 from flask_cors import CORS
 from analysis.emotion_detector import analyze_video
 from analysis.face_features import analyze_face
 from analysis.confidence_metric import compute_overall_confidence
 from analysis.emotion_timeline import plot_emotion_timeline
-from analysis.ai_confidence import analyze_combined_ai_feedback  # ✅ correct import
+from analysis.ai_confidence import analyze_combined_ai_feedback  
+from analysis.questions import ai_generate_questions
 from dotenv import load_dotenv
 import os, base64
 
@@ -12,7 +14,7 @@ import os, base64
 load_dotenv()
 
 app = Flask(__name__)
-# Enable CORS for all routes
+
 CORS(app, origins=["http://localhost:3000", "http://localhost:8000"])
 
 api_key = os.getenv("OPENAI_API_KEY")
@@ -27,7 +29,25 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def home():
     return jsonify({"message": "AI Interview Coach API is running."})
 
+@app.route("/generateQuestions", methods=["POST"])
+def generate_questions_route():
+    data = request.get_json()  
 
+    company = data.get("company")
+    branch = data.get("branch")
+    round_type = data.get("round")
+    experience = data.get("experience")
+
+    if not all([company, branch, round_type, experience]):
+        return jsonify({"error": "Missing one or more required fields."}), 400
+
+    try:
+        questions = ai_generate_questions(company, branch, round_type, experience, api_key)
+        return jsonify({"questions": questions})
+    except Exception as e:
+        print("Error in question generation:", e)
+        return jsonify({"error": str(e)}), 500
+    
 @app.route("/analyzeVideo", methods=["POST"])
 def analyze_video_route():
     if "video" not in request.files:
@@ -41,24 +61,24 @@ def analyze_video_route():
     file.save(video_path)
 
     try:
-        # 1️⃣ Analyze emotions (frame-based)
+        # Analyze emotions (frame-based)
         timeline = analyze_video(video_path)
 
-        # 2️⃣ Generate emotion timeline image
+        # Generate emotion timeline image
         timeline_img_path = os.path.join(UPLOAD_FOLDER, "emotion_timeline.png")
         plot_emotion_timeline(timeline, timeline_img_path)
 
-        # 3️⃣ Convert timeline image to base64
+        # Convert timeline image to base64
         with open(timeline_img_path, "rb") as f:
             encoded_timeline = base64.b64encode(f.read()).decode("utf-8")
 
-        # 4️⃣ Analyze face features (eye contact, emotion, smile count)
+        # Analyze face features (eye contact, emotion, smile count)
         face_features = analyze_face(video_path)
 
-        # 5️⃣ Compute rule-based confidence metrics
+        # Compute rule-based confidence metrics
         confidence_metrics = compute_overall_confidence(face_features)
 
-        # 6️⃣ Prepare metrics for combined AI feedback
+        # Prepare metrics for combined AI feedback
         metrics_for_ai = {
             "rule_confidence": confidence_metrics.pop("final_confidence", 0),
             "eye_contact_score": face_features.get("eye_contact_score"),
@@ -67,20 +87,20 @@ def analyze_video_route():
             "smile_count": face_features.get("smile_count"),
         }
 
-        # 7️⃣ AI-based combined confidence + feedback (single GPT call)
+        # AI-based combined confidence + feedback (single GPT call)
         ai_result = analyze_combined_ai_feedback(video_path, metrics_for_ai)
         ai_conf = ai_result.get("ai_confidence_score", 0)
         ai_feedback = ai_result.get("ai_confidence_feedback", "AI feedback unavailable.")
         ai_overall_feedback = ai_result.get("ai_overall_feedback", {})
 
-        # 8️⃣ Blend AI and rule-based confidence
+        # Blend AI and rule-based confidence
         ai_conf = ai_result.get("ai_confidence_score") or 0
         rule_conf = confidence_metrics.get("final_confidence") or 0
 
         # Blend AI and rule-based confidence
         final_confidence = round((0.6 * ai_conf + 0.4 * rule_conf), 2)
 
-        # 9️⃣ Build final structured response
+        # Build final structured response
         result = {
                     # Emotion and eye contact
                     "dominant_emotion": face_features.get("dominant_emotion"),
