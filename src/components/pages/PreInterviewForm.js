@@ -11,6 +11,7 @@ const PreInterviewForm = () => {
     jobRole: "",
     company: "",
     difficulty: "medium",
+    interviewType: "technical",
   });
 
   const handleChange = (e) => {
@@ -20,7 +21,7 @@ const PreInterviewForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     localStorage.setItem("preInterviewData", JSON.stringify(formData));
-    navigate("/practice"); // or "/interview" if needed
+    navigate("/practice"); // redirect to practice questions page
   };
 
   return (
@@ -63,6 +64,22 @@ const PreInterviewForm = () => {
                 className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
               />
+            </div>
+
+            {/* Interview Type */}
+            <div className="flex flex-col">
+              <label className="text-black font-semibold mb-1">Interview Type</label>
+              <select
+                name="interviewType"
+                value={formData.interviewType}
+                onChange={handleChange}
+                className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="technical">Technical</option>
+                <option value="hr">HR</option>
+                <option value="behavioral">Behavioral</option>
+                <option value="managerial">Managerial</option>
+              </select>
             </div>
 
             {/* Difficulty Level */}

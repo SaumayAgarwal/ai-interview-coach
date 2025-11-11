@@ -7,6 +7,7 @@ const VideoUpload = () => {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
   const [analysis, setAnalysis] = useState(null);
+  const [textAnalysis, setTextAnalysis] = useState(null);
   const [uploading, setUploading] = useState(false);
 
   const handleFileChange = (e) => {
@@ -28,14 +29,28 @@ const VideoUpload = () => {
       setUploading(true);
       setMessage("");
 
-      // Axios will automatically set Content-Type for FormData
-      const response = await axios.post("http://localhost:8080/api/video/upload", formData, {
-        timeout: 300000, // 5 minutes
+      const response = await axios.post(
+        "http://localhost:8080/api/video/upload",
+        formData,
+        { timeout: 300000 }
+      );
+
+      const data = response?.data || {};
+      setAnalysis({
+        final_confidence:
+          data.combined_confidence ??
+          data.final_confidence ??
+          data.ai_confidence_score,
+        eye_contact_score: data.eye_contact_score,
+        smile_engagement_score: data.smile_engagement_score,
+        dominant_emotion: data.dominant_emotion,
+        emotion_timeline_image: data.emotion_timeline_image,
+        ai_overall_feedback: data.ai_overall_feedback,
+        ai_confidence_score: data.ai_confidence_score,
+        rule_based_confidence: data.rule_based_confidence,
       });
 
-      // be defensive: server might return analysis in different shapes
-      const data = response?.data || {};
-      setAnalysis(data);
+      setTextAnalysis(data.text_analysis || null);
       setMessage("✅ Analysis complete");
     } catch (error) {
       console.error("Error uploading video:", error);
@@ -51,12 +66,10 @@ const VideoUpload = () => {
     }
   };
 
-  // small helper to render percent bars safely
   const pct = (v) => {
     const n = Number(v);
     if (!isFinite(n) || n < 0) return 0;
-    if (n > 100) return 100;
-    return Math.round(n);
+    return Math.min(Math.round(n), 100);
   };
 
   return (
@@ -104,21 +117,59 @@ const VideoUpload = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mt-8 w-full max-w-5xl bg-white/10 rounded-2xl p-8 border border-white/20 backdrop-blur-md"
         >
-          <h2 className="text-3xl font-bold mb-6 text-center">📊 Analysis Results</h2>
+          <h2 className="text-3xl font-bold mb-6 text-center">
+            📊 Analysis Results (Face + Text)
+          </h2>
 
-          {/* Overall Confidence Score */}
           <div className="mb-8 text-center">
             <div className="inline-block bg-gradient-to-r from-green-400 to-blue-500 rounded-full px-8 py-4">
               <div className="text-5xl font-bold">
-                {analysis.final_confidence ?? analysis.ai_confidence_score ?? 0}
+                {analysis.final_confidence ?? 0}%
               </div>
               <div className="text-lg mt-2">Overall Confidence Score</div>
             </div>
           </div>
 
-          {/* Stats Grid */}
+          {textAnalysis && (
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h3 className="text-xl font-semibold mb-2">Text Sentiment</h3>
+                <div className="text-2xl font-bold capitalize">
+                  {textAnalysis.sentiment ?? "neutral"}
+                </div>
+                <div className="text-sm text-blue-200 mt-2">
+                  Dominant Emotion:{" "}
+                  {textAnalysis.dominant_emotion ?? "neutral"}
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h3 className="text-xl font-semibold mb-2">Speech Metrics</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-blue-200">Filler Words</div>
+                    <div className="text-2xl font-bold">
+                      {textAnalysis.filler_count ?? 0}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-blue-200">Word Count</div>
+                    <div className="text-2xl font-bold">
+                      {textAnalysis.word_count ?? 0}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-blue-200">Fluency Score</div>
+                    <div className="text-2xl font-bold">
+                      {textAnalysis.fluency_score ?? 0}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* Eye Contact */}
             <div className="bg-white/5 rounded-xl p-6 border border-white/10">
               <div className="flex items-center gap-3 mb-4">
                 <Eye className="text-blue-400" size={24} />
@@ -135,7 +186,6 @@ const VideoUpload = () => {
               </div>
             </div>
 
-            {/* Smile Engagement */}
             <div className="bg-white/5 rounded-xl p-6 border border-white/10">
               <div className="flex items-center gap-3 mb-4">
                 <Smile className="text-yellow-400" size={24} />
@@ -152,7 +202,6 @@ const VideoUpload = () => {
               </div>
             </div>
 
-            {/* Dominant Emotion */}
             <div className="bg-white/5 rounded-xl p-6 border border-white/10">
               <div className="flex items-center gap-3 mb-4">
                 <TrendingUp className="text-purple-400" size={24} />
@@ -161,13 +210,9 @@ const VideoUpload = () => {
               <div className="text-3xl font-bold capitalize">
                 {analysis.dominant_emotion ?? "Neutral"}
               </div>
-              {analysis.smile_feedback && (
-                <div className="text-sm text-blue-200 mt-2">{analysis.smile_feedback}</div>
-              )}
             </div>
           </div>
 
-          {/* Emotion Timeline Image */}
           {analysis.emotion_timeline_image && (
             <div className="mb-8 bg-white/5 rounded-xl p-6 border border-white/10">
               <h3 className="text-xl font-semibold mb-4">Emotion Timeline</h3>
@@ -179,7 +224,6 @@ const VideoUpload = () => {
             </div>
           )}
 
-          {/* AI Feedback */}
           {analysis.ai_overall_feedback && (
             <div className="bg-white/5 rounded-xl p-6 border border-white/10">
               <div className="flex items-center gap-3 mb-4">
@@ -200,22 +244,6 @@ const VideoUpload = () => {
               </div>
             </div>
           )}
-
-          {/* Additional Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-              <div className="text-sm text-blue-200">AI Confidence</div>
-              <div className="text-2xl font-bold">
-                {analysis.ai_confidence_score ?? 0}
-              </div>
-            </div>
-            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-              <div className="text-sm text-blue-200">Rule-Based Confidence</div>
-              <div className="text-2xl font-bold">
-                {analysis.rule_based_confidence ?? 0}
-              </div>
-            </div>
-          </div>
         </motion.div>
       )}
     </div>
