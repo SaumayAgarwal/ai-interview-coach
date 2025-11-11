@@ -15,7 +15,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app, origins=["http://localhost:3000", "http://localhost:8000"])
+CORS(app, origins=["http://localhost:3000", "http://localhost:8000", "http://localhost:8080"])
 
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
